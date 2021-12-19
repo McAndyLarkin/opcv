@@ -8,27 +8,24 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/stitching.hpp"
 
+using namespace std;
+using namespace cv;
+
 class Laba2 {
 public:
      static int start(string file) {
         Mat image, result;
+        image = imread(file);
 
-        String imagePath(file);
-        if (argc > 1){
-            imagePath = argv[1];
-        }
-        image = imread(imagePath);
-
-        if (image.empty())
-        {
-            std::cout << "Could not read the image: " << imagePath << std::endl;
+        if (image.empty()){
+            cout << "Input Error " << imagePath << endl;
             return 1;
         }
 
-        Blur(image, result, 6);
+        get_blur(image, result, 6);
         imshow("Blur", result);
 
-        SobelGradient(image, result);
+        get_gradient(image, result);
         imshow("Gradient", result);
 
         waitKey(0);
@@ -37,57 +34,52 @@ public:
 	}
 
 private: 
-    static uchar calculatePixel(const cv::Mat& image, const std::vector<std::vector<double>>& kernel, int i, int j) {
+    static uchar pixel(const Mat& image, const vector<vector<double>>& kernel, int i, int j) {
         int newPixel = 0;
 
-        for (int offsetI = 0; offsetI < convolutionMatrix.size(); ++offsetI) {
-            for (int offsetJ = 0; offsetJ < convolutionMatrix.size(); ++offsetJ) {
+        for (int offsetI = 0; offsetI < convolutionMatrix.size(); ++offsetI)
+            for (int offsetJ = 0; offsetJ < convolutionMatrix.size(); ++offsetJ) 
                 newPixel += image.at<uchar>(i + offsetI, j + offsetJ) * convolutionMatrix[offsetI][offsetJ];
-            }
-        }
 
         return saturate_cast<uchar>(newPixel);
     }
 
-    static void MatrixFilter(const cv::Mat& image, cv::Mat& result, const std::vector<std::vector<double>>& convolutionMatrix) {
+    static void get_blur(const Mat& image, Mat& result, unsigned size) {
+        image.copyTo(result);
+        vector<vector<double> > convolutionMatrix(size, vector<double>(size, 1. / (size * size)));
         int border = convolutionMatrix.size() / 2;
 
         vector<Mat> colorChannels;
         split(image, colorChannels);
         vector<Mat> resultColorChannels = colorChannels;
 
-        for (int i = border; i < image.rows - border; ++i) {
-            for (int j = border; j < image.cols - border; ++j) {
-                for (int k = 0; k < resultColorChannels.size(); k++) {
-                    resultColorChannels[k].at<uchar>(i, j) = calculatePixel(colorChannels[k], convolutionMatrix, i, j);
-                }
-            }
-        }
+        for (int i = border; i < image.rows - border; ++i) 
+            for (int j = border; j < image.cols - border; ++j) 
+                for (int k = 0; k < resultColorChannels.size(); k++) 
+                    resultColorChannels[k].at<uchar>(i, j) = pixel(colorChannels[k], convolutionMatrix, i, j);
+
         merge(resultColorChannels, result);
     }
 
-    static void Blur(const cv::Mat& image, cv::Mat& result, unsigned size) {
-        image.copyTo(result);
-        vector<vector<double> > convolutionMatrix(size, vector<double>(size, 1. / (size * size)));
-        MatrixFilter(image, result, convolutionMatrix);
-    }
-
-    static void SobelGradient(const cv::Mat& image, cv::Mat& result) {
+    static void get_gradient(const Mat& image, Mat& result) {
         image.copyTo(result);
         vector<vector<double> > convolutionMatrix = { 
             {-1, -2, -1},{0, 0, 0},{1, 2, 1} };
-        MatrixFilter(image, result, convolutionMatrix);
+        int border = convolutionMatrix.size() / 2;
+
+        vector<Mat> colorChannels;
+        split(image, colorChannels);
+        vector<Mat> resultColorChannels = colorChannels;
+
+        for (int i = border; i < image.rows - border; ++i) 
+            for (int j = border; j < image.cols - border; ++j) 
+                for (int k = 0; k < resultColorChannels.size(); k++) 
+                    resultColorChannels[k].at<uchar>(i, j) = pixel(colorChannels[k], convolutionMatrix, i, j);
+        merge(resultColorChannels, result);
     }
 };
 
 class Laba1 {
-    int max_pic_in_row = 3;
-    int max_pic_in_column = 2;
-    int size = 300;
-    int scale;
-    int max;
-    int width_pic;
-    int height_pic;
     Mat image;
 public:
      static int start(string file) {
@@ -107,8 +99,8 @@ public:
 
 private:
     static void grey(){
-        Mat image;
-        cvtColor(picture, image, COLOR_RGB2GRAY);
+        Mat picture;
+        cvtColor(image, picture, COLOR_RGB2GRAY);
         namedWindow("grey");
         imshow("grey", image);
         waitKey(0);
@@ -188,7 +180,7 @@ class Lab3{
 
 
 int main(int argc, char** argv) {
-    Laba2().start("");
-    Laba1().start("");
-    Laba4().start(2, "", "");
+    Laba2().start("piter.png");
+    Laba1().start("piter.png");
+    Laba4().start(3, "pan1.png", "pan2.png", "pan3.png");
 }
